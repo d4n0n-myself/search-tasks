@@ -12,6 +12,7 @@ namespace Tasks
     {
         private static readonly List<(Uri, string)> List = new();
         private static readonly Queue<Uri> PagesToGet = new();
+        private const string ResultsFolder = "results";
 
         private static void Main(string[] args)
         {
@@ -21,9 +22,10 @@ namespace Tasks
             }
 
             var uri = new Uri(args[0]);
-
+            var pageCounter = 0;
             while (true)
             {
+                pageCounter++;
                 if (List.Count >= 100)
                 {
                     break;
@@ -75,19 +77,6 @@ namespace Tasks
                     continue;
                 }
 
-                if (content.Any())
-                {
-                    var htmlDocument = new HtmlDocument();
-                    htmlDocument.LoadHtml(content); 
-                    var value = htmlDocument.DocumentNode.SelectNodes("//text()").Select(x => x.InnerText.Split())
-                        .SelectMany(x => x.Select(y => y.Trim('\n', '\t', ':', '.', ',', ' ', '[', ']', '-', '"')))
-                        .Where(x => x is not null && x.Any());
-                    var wordCount = value.Count();
-                    if (wordCount < 1000)
-                        continue;
-                    List.Add((uri, content));
-                }
-
                 var links = GetNewLinks(uri, content);
 
                 foreach (var link in links)
@@ -95,14 +84,59 @@ namespace Tasks
                     PagesToGet.Enqueue(link);
                 }
 
-                // streamResponse.Close();
-                // streamReader.Close();
-                // myWebResponse.Close();
+                if (content.Any())
+                {
+                    var splitters = new[]
+                    {
+                        '\n', '\t', ':', ';', '(', ')', '.', ',', ' ', '[', ']', '-', '"', '{', '}', '!', '?', '@', '$', '='
+                    };
+                    // var splitters = new[] {"\n", "\t", ":", ".", ",', ' ', '[', ']', '-', '"'};
+                    // var htmlDocument = new HtmlDocument();
+                    // htmlDocument.LoadHtml(content);
+                    // var value = htmlDocument.DocumentNode
+                    //     .SelectNodes("//text()")
+                    //     .Select(x => x.InnerText.Split(splitters))
+                    //     .SelectMany(x => x.Select(y => y.Trim(splitters)))
+                    //     .Where(x => x is not null && x != string.Empty);
+                    // var words = value as string[] ?? value.ToArray();
+                    // var wordCount = words.Length;
+                    // if (wordCount < 1000)
+                    // {
+                    //     uri = null;
+                    //     continue;
+                    // }
+
+                    string pattern = @"<(.|\n)*?>";
+
+                    var step1 = Regex.Replace(content, "<script.*?script>", " ", RegexOptions.Singleline);
+                    var step2 = Regex.Replace(step1, "<style.*?style>", " ", RegexOptions.Singleline);
+                    var step3 = Regex.Replace(step2, "&#.*?;", "");
+                    var step4 = Regex.Replace(step3, "\n*", "\n");
+                    // var step3 = step2
+                    //     .Replace("&#160;", "")
+                    //     .Replace("&#32;", "")
+                    //     .Replace("&#91;", "")
+                    //     .Replace("6&#93;", "");
+                    var textOnly = Regex.Replace(step4, pattern, string.Empty);
+
+                    var words = textOnly.Split(splitters)
+                        .Where(x=> x != string.Empty && x.All(y => !char.IsDigit(y)))
+                        .ToArray();
+                    if (words.Length < 1000)
+                    {
+                        Console.WriteLine("Not enough words, skipping...");
+                        uri = null;
+                        continue;
+                    }
+                    List.Add((uri, textOnly));
+                }
+
                 uri = null;
             }
 
+            Console.WriteLine($"Scanned {pageCounter} pages");
             Console.WriteLine("Writing results to disk");
-            Directory.CreateDirectory("results");
+            Directory.CreateDirectory(ResultsFolder);
 
             var lines = new List<string>();
 
@@ -111,7 +145,7 @@ namespace Tasks
                 lines.Add($"{i} {List[i].Item1}");
             }
 
-            File.WriteAllLines("results/index.txt", lines);
+            File.WriteAllLines($"{ResultsFolder}/../index.txt", lines);
 
             for (var i = 0; i < List.Count; i++)
             {
@@ -119,7 +153,10 @@ namespace Tasks
                 try
                 {
                     Console.WriteLine($"Writing {key}");
-                    File.WriteAllText($"results/{i}.txt", value);
+                    File.WriteAllText(
+                        $"{ResultsFolder}/{i}.txt",
+                        value //Regex.Replace(value, "<*>", " ")
+                    );
                 }
                 catch (Exception e)
                 {
@@ -146,14 +183,10 @@ namespace Tasks
                 try
                 {
                     var temp = new Uri(value, UriKind.RelativeOrAbsolute);
-                    if (!temp.IsAbsoluteUri)
-                    {
-                        uri = new Uri(baseUrl.GetLeftPart(UriPartial.Authority) + temp);
-                    }
-                    else
-                    {
-                        uri = temp;
-                    }
+                    uri = !temp.IsAbsoluteUri
+                        ? new Uri(baseUrl.GetLeftPart(UriPartial.Authority).TrimEnd('/') + '/' +
+                                  temp.ToString().TrimStart('/'))
+                        : temp;
                 }
                 catch
                 {
