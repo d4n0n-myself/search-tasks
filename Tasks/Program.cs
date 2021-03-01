@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
-using HtmlAgilityPack;
 
 namespace Tasks
 {
@@ -90,35 +89,8 @@ namespace Tasks
                     {
                         '\n', '\t', ':', ';', '(', ')', '.', ',', ' ', '[', ']', '-', '"', '{', '}', '!', '?', '@', '$', '='
                     };
-                    // var splitters = new[] {"\n", "\t", ":", ".", ",', ' ', '[', ']', '-', '"'};
-                    // var htmlDocument = new HtmlDocument();
-                    // htmlDocument.LoadHtml(content);
-                    // var value = htmlDocument.DocumentNode
-                    //     .SelectNodes("//text()")
-                    //     .Select(x => x.InnerText.Split(splitters))
-                    //     .SelectMany(x => x.Select(y => y.Trim(splitters)))
-                    //     .Where(x => x is not null && x != string.Empty);
-                    // var words = value as string[] ?? value.ToArray();
-                    // var wordCount = words.Length;
-                    // if (wordCount < 1000)
-                    // {
-                    //     uri = null;
-                    //     continue;
-                    // }
 
-                    string pattern = @"<(.|\n)*?>";
-
-                    var step1 = Regex.Replace(content, "<script.*?script>", " ", RegexOptions.Singleline);
-                    var step2 = Regex.Replace(step1, "<style.*?style>", " ", RegexOptions.Singleline);
-                    var step3 = Regex.Replace(step2, "&#.*?;", "");
-                    var step4 = Regex.Replace(step3, "\n*", "\n");
-                    // var step3 = step2
-                    //     .Replace("&#160;", "")
-                    //     .Replace("&#32;", "")
-                    //     .Replace("&#91;", "")
-                    //     .Replace("6&#93;", "");
-                    var textOnly = Regex.Replace(step4, pattern, string.Empty);
-
+                    var textOnly = RemoveHtmlTags(content);
                     var words = textOnly.Split(splitters)
                         .Where(x=> x != string.Empty && x.All(y => !char.IsDigit(y)))
                         .ToArray();
@@ -163,6 +135,19 @@ namespace Tasks
                     Console.WriteLine(e);
                 }
             }
+        }
+
+        private static string RemoveHtmlTags(string content)
+        {
+            const string pattern = @"<(.|\n)*?>";
+
+            var step1 = Regex.Replace(content, "<script.*?script>", " ", RegexOptions.Singleline);
+            var step2 = Regex.Replace(step1, "<style.*?style>", " ", RegexOptions.Singleline);
+            var step3 = Regex.Replace(step2, "&#.*?;", "");
+            var step4 = Regex.Replace(step3, pattern, string.Empty);
+            var step5 = step4.Replace("\t", "");
+            var textOnly = Regex.Replace(step5, "[\r\n]+", "\r\n");
+            return textOnly;
         }
 
         private static IEnumerable<Uri> GetNewLinks(Uri baseUrl, string content)
