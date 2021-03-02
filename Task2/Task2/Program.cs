@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Iveonik.Stemmers;
 using NTextCat;
 
@@ -10,8 +12,8 @@ namespace Task2
 {
     internal static class Program
     {
-        private const string ResultsFolder = @"C:\repos\search-tasks\Tasks\bin\Debug\net5.0\results";
-        private const string StemmedFolder = @"C:\repos\search-tasks\stemmed";
+        private const string ResultsFolder = @"..\..\..\..\..\Tasks\bin\Debug\net5.0\results";
+        private const string StemmedFolder = @"..\..\..\..\..\Tasks\bin\Debug\net5.0\stemmed";
         
         private static readonly char[] Splitters = {
             '\n', '\t', '\r', ':', ';', '(', ')', '.', ',', ' ', '-', '"', '{', '}', '!', '?', '@', '$', '='
@@ -19,20 +21,25 @@ namespace Task2
 
         private static void Main()
         {
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
             if (!Directory.Exists(StemmedFolder))
             {
                 Directory.CreateDirectory(StemmedFolder);
             }
 
-            foreach (var file in Directory.GetFiles(ResultsFolder))
+            Parallel.ForEach(Directory.GetFiles(ResultsFolder), (file, state, arg3) =>
             {
+                // })
+                // foreach (var file in Directory.GetFiles(ResultsFolder))
+                // {
                 Console.WriteLine($"Processing {file}");
                 var text = File.ReadAllText(file);
                 var text1 = Regex.Replace(text, new string(Splitters), " ");
                 var sb = new StringBuilder(text1);
                 sb = sb.ReplaceAll(Splitters.Select(x => x.ToString()));
                 var wordsByWhiteSpace = sb.ToString();
-                
+
                 var factory = new RankedLanguageIdentifierFactory();
                 var identifier = factory.Load(@"C:\repos\search-tasks\Task2\Core14.profile.xml");
                 var languages = identifier.Identify(wordsByWhiteSpace);
@@ -46,7 +53,7 @@ namespace Task2
                     _ => throw new NotSupportedException()
                 };
                 var stemmedFile = file.Replace(ResultsFolder, StemmedFolder);
-                if (File.Exists(stemmedFile)) 
+                if (File.Exists(stemmedFile))
                     File.Delete(stemmedFile);
 
                 using var stemmedFileWriter = File.AppendText(stemmedFile);
@@ -55,8 +62,11 @@ namespace Task2
                     var stemmed = stemmer.Stem(word);
                     stemmedFileWriter.WriteLine(stemmed);
                     // Console.WriteLine($"{word} -> {stemmed}");
-                }    
-            }
+                }
+            });
+                    
+            stopwatch.Stop();
+            Console.WriteLine(stopwatch.Elapsed);
         }
     }
 }

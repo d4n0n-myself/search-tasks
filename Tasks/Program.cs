@@ -45,13 +45,12 @@ namespace Tasks
                     uri = null;
                     continue;
                 }
-
-                var myWebRequest = WebRequest.Create(uri!);
-                Console.WriteLine($"Reading {uri}");
-
                 string content;
                 try
                 {
+                    var myWebRequest = WebRequest.Create(uri!);
+                    Console.WriteLine($"Reading {uri}");
+
                     using var myWebResponse = myWebRequest.GetResponse();
                     using var streamResponse = myWebResponse.GetResponseStream();
 
