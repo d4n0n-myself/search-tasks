@@ -11,7 +11,7 @@ namespace Task3
 	{
 		private const string StemmedFolder = @"..\..\..\..\..\Tasks\bin\Debug\net5.0\stemmed";
 
-		private static void Main(string[] args)
+		private static void Main()
 		{
 			var invertedIndex = new ConcurrentDictionary<string, List<int>>();
 
@@ -23,7 +23,7 @@ namespace Task3
 				foreach (var grouping in groups)
 				{
 					invertedIndex.AddOrUpdate(grouping.Key,
-						_ => new List<int>(fileIndex),
+						_ => new List<int>{ fileIndex },
 						(_, ints) =>
 						{
 							ints.Add(fileIndex);
@@ -66,18 +66,18 @@ namespace Task3
 				
 				IEnumerable<int> result;
 
-				var docs = new List<List<int>>
-				{
-					invertedIndex[words[0]], 
-					invertedIndex[words[1]], 
-					invertedIndex[words[2]]
-				};
+				var docs = new List<List<int>>();
 
-				for (var i = 0; i < words.Length; i++)
+				foreach (var t in words)
 				{
-					if (words[i].StartsWith('!'))
+					if (t.StartsWith('!'))
 					{
-						docs[i] = GetInvertedValue(docs[i]);
+						docs.Add(GetInvertedValue(invertedIndex.GetValueOrDefault(t.TrimStart('!')) ??
+						                          new List<int>()));
+					}
+					else
+					{
+						docs.Add(invertedIndex.GetValueOrDefault(t) ?? new List<int>());
 					}
 				}
 
@@ -113,10 +113,13 @@ namespace Task3
 							.Concat(docs[2]);
 					}
 				}
+
+				result = result.Distinct();
 				
 				Console.WriteLine($"Result: {string.Join(", ", result)}");				
 				Console.WriteLine("Enter a query:");
 			}
+			// ReSharper disable once FunctionNeverReturns
 		}
 
 		private static List<int> GetInvertedValue(IEnumerable<int> values)
