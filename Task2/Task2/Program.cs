@@ -28,6 +28,8 @@ namespace Task2
                 Directory.CreateDirectory(StemmedFolder);
             }
 
+            var factory = new RankedLanguageIdentifierFactory();
+            var identifier = factory.Load(@"..\..\..\..\Core14.profile.xml");
             Parallel.ForEach(Directory.GetFiles(ResultsFolder), (file, _, _) =>
             {
                 Console.WriteLine($"Processing {file}");
@@ -37,9 +39,7 @@ namespace Task2
                 sb = sb.ReplaceAll(Splitters.Select(x => x.ToString()));
                 var wordsByWhiteSpace = sb.ToString();
 
-                var factory = new RankedLanguageIdentifierFactory();
-                var identifier = factory.Load(@"C:\repos\search-tasks\Task2\Core14.profile.xml");
-                var languages = identifier.Identify(wordsByWhiteSpace);
+                var languages = identifier.Identify(wordsByWhiteSpace.Substring(100));
                 var mostCertainLanguage = languages.FirstOrDefault();
                 var langCode = mostCertainLanguage?.Item1.Iso639_3;
                 Console.WriteLine($"Lang code: {langCode}");
