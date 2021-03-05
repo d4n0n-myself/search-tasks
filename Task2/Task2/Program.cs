@@ -28,11 +28,8 @@ namespace Task2
                 Directory.CreateDirectory(StemmedFolder);
             }
 
-            Parallel.ForEach(Directory.GetFiles(ResultsFolder), (file, state, arg3) =>
+            Parallel.ForEach(Directory.GetFiles(ResultsFolder), (file, _, _) =>
             {
-                // })
-                // foreach (var file in Directory.GetFiles(ResultsFolder))
-                // {
                 Console.WriteLine($"Processing {file}");
                 var text = File.ReadAllText(file);
                 var text1 = Regex.Replace(text, new string(Splitters), " ");
