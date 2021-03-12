@@ -10,6 +10,7 @@ namespace Task3
 	internal static class Program
 	{
 		private const string StemmedFolder = @"..\..\..\..\..\Tasks\bin\Debug\net5.0\stemmed";
+		private const string IndexFilePath = @"..\..\..\..\..\Tasks\bin\Debug\net5.0\inverted_index.txt";
 
 		private static void Main()
 		{
@@ -31,6 +32,9 @@ namespace Task3
 						});
 				}
 			});
+
+			Console.WriteLine("Saving index...");
+			File.WriteAllLines(IndexFilePath, invertedIndex.Select(x => x.Key + ":" + string.Join(",", x.Value)));
 
 			Console.WriteLine("Enter a query:");
 			while (true)

@@ -15,8 +15,10 @@ namespace Task2
         private const string ResultsFolder = @"..\..\..\..\..\Tasks\bin\Debug\net5.0\results";
         private const string StemmedFolder = @"..\..\..\..\..\Tasks\bin\Debug\net5.0\stemmed";
         
-        private static readonly char[] Splitters = {
-            '\n', '\t', '\r', ':', ';', '(', ')', '.', ',', ' ', '-', '"', '{', '}', '!', '?', '@', '$', '='
+        private static readonly char[] Splitters =
+        {
+            '\n', '\t', '\r', ':', ';', '(', ')', '.', ',', ' ', '-', '"', '{', '}', '!', '?',
+            '@', '$', '=', '^', '/', '\\', '°', '#', '*', '|', '§', '\'',
         };
 
         private static void Main()
