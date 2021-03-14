@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Iveonik.Stemmers;
+using NTextCat;
 
 namespace Task3
 {
@@ -11,9 +13,13 @@ namespace Task3
 	{
 		private const string StemmedFolder = @"..\..\..\..\..\Tasks\bin\Debug\net5.0\stemmed";
 		private const string IndexFilePath = @"..\..\..\..\..\Tasks\bin\Debug\net5.0\inverted_index.txt";
+		private const string Config = @"..\..\..\..\..\Task2\Core14.profile.xml";
 
 		private static void Main()
 		{
+			var factory = new RankedLanguageIdentifierFactory();
+			var identifier = factory.Load(Config);
+			
 			var invertedIndex = new ConcurrentDictionary<string, List<int>>();
 
 			Console.WriteLine("Reading...");
@@ -67,7 +73,23 @@ namespace Task3
 					Console.WriteLine("Enter a query:");
 					continue;
 				}
-				
+
+				for (var i = 0; i < words.Length; i++)
+				{
+					var languages = identifier.Identify(words[i]);
+					var mostCertainLanguage = languages.FirstOrDefault();
+					var langCode = mostCertainLanguage?.Item1.Iso639_3;
+					IStemmer stemmer = langCode switch
+					{
+						"eng" => new EnglishStemmer(),
+						"rus" => new RussianStemmer(),
+						_ => throw new NotSupportedException()
+					};
+
+					words[i] = stemmer.Stem(words[i]);
+				}
+
+
 				IEnumerable<int> result;
 
 				var docs = new List<List<int>>();
