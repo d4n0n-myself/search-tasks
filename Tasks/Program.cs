@@ -40,7 +40,7 @@ namespace Tasks
                     uri = newUri;
                 }
 
-                if (List.Any(x => x.Item1 == uri))
+                if (List.Any(x => x.Item1.ToString() == uri?.GetLeftPart(UriPartial.Authority)))
                 {
                     uri = null;
                     continue;
@@ -79,7 +79,14 @@ namespace Tasks
 
                 foreach (var link in links)
                 {
-                    PagesToGet.Enqueue(link);
+                    if (!PagesToGet
+                            .Select(x => x.GetLeftPart(UriPartial.Path).ToString())
+                            .Contains(link.GetLeftPart(UriPartial.Path))
+                        && !List
+                            .Select(x => x.Item1.GetLeftPart(UriPartial.Path).ToString())
+                            .Contains(link.GetLeftPart(UriPartial.Path))
+                    )
+                        PagesToGet.Enqueue(link);
                 }
 
                 if (content.Any())
@@ -183,11 +190,11 @@ namespace Tasks
 
                 if (!newLinks.Contains(uri))
                 {
-                    newLinks.Add(uri);
+                    newLinks.Add(new Uri(uri.GetLeftPart(UriPartial.Path)));
                 }
             }
 
-            return newLinks;
+            return newLinks.Distinct();
         }
     }
 }

@@ -70,7 +70,7 @@ namespace Task4
                 {
                     var idf = idfs[word];
                     var tfIdf = Math.Round((decimal) ((double) tf * Math.Log2((double) idf)), 5, MidpointRounding.ToEven);
-                    streamWriter.WriteLine($@"{word},{document},{tf},{idf},{tfIdf}");
+                    streamWriter.WriteLine($@"{word};{document};{tf};{idf};{tfIdf}");
                 }
             }
         }
