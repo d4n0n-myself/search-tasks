@@ -5,6 +5,8 @@ using System.Linq;
 using Iveonik.Stemmers;
 using NTextCat;
 using NTextCat.Commons;
+// ReSharper disable CollectionNeverQueried.Local
+// ReSharper disable CompareOfFloatsByEqualityOperator
 
 namespace Task5
 {
@@ -24,21 +26,24 @@ namespace Task5
 
             foreach (var fileLine in fileLines)
             {
-                var values = fileLine.Split(';');
+                var values = fileLine.Split(';', ' ').Where(x=>!string.IsNullOrWhiteSpace(x)).ToArray();
 
-                var key = int.Parse(values[1]);
-                if (!docVectors.ContainsKey(key))
+                var documentIndex = int.Parse(values[1]);
+                if (!docVectors.ContainsKey(documentIndex))
                 {
-                    docVectors.Add(key, new Dictionary<string, decimal>());
+                    docVectors.Add(documentIndex, new Dictionary<string, decimal>());
                 }
 
-                if (!tfs.ContainsKey(key))
+                if (!tfs.ContainsKey(documentIndex))
                 {
-                    tfs.Add(key, new Dictionary<string, decimal>());
+                    tfs.Add(documentIndex, new Dictionary<string, decimal>());
                 }
 
-                docVectors[key].Add(values[0], decimal.Parse(values[4]));
-                tfs[key].Add(values[0], decimal.Parse(values[2]));
+                var word = values[0];
+                var tfIdf = values[4];
+                var tf = values[2];
+                docVectors[documentIndex].Add(word, decimal.Parse(tfIdf));
+                tfs[documentIndex].Add(word, decimal.Parse(tf));
             }
 
             Dictionary<int, List<decimal>> docResVectors = new();
@@ -76,39 +81,38 @@ namespace Task5
             for (var j = 0; j < query.Length; j++)
             for (var i = 0; i < docResVectors.Count; i++)
             {
-                double value = 0;
                 var preparedQueryWord = query[j];
                 var tf = tfs[i].ContainsKey(preparedQueryWord) ? tfs[i][preparedQueryWord] : 0;
                 var tfMax = tfs[i].Max(x => x.Value);
                 var n = docVectors.Count;
                 var idf = Math.Log2(n / (double) docResVectors.Select(x => x.Value[j] > 0 ? 1 : 0).Sum());
-                value += idf * (0.5 + 0.5 * ((double) tf / (double) tfMax));
+                var value = idf * (0.5 + 0.5 * ((double) tf / (double) tfMax));
 
                 if (!cos.ContainsKey(j)) cos.Add(j, new Dictionary<int, double>());
                 cos[j].Add(i, value);
             }
 
             cos.SelectMany(x => x.Value.Select(y => y)).OrderByDescending(x => x.Value).Take(10)
-                .ForEach(x => Console.WriteLine(x.Key));
+                .ForEach(x => Console.WriteLine(x.Key + ";" + x.Value));
         }
 
         private static string PrepareWord(RankedLanguageIdentifier identifier, string or)
         {
             var languages = identifier.Identify(or).ToArray();
-            var langs = languages.Where(x => x.Item1.Iso639_3 == "eng" || x.Item1.Iso639_3 == "rus").ToArray();
-            if (!langs.Any())
+            var myLanguages = languages.Where(x => x.Item1.Iso639_3 == "eng" || x.Item1.Iso639_3 == "rus").ToArray();
+            if (!myLanguages.Any())
             {
                 throw new NotSupportedException();
             }
 
-            var max = langs.Min(x => x.Item2);
-            // ReSharper disable once CompareOfFloatsByEqualityOperator
-            var lang = langs.First(x => x.Item2 == max);
+            var max = myLanguages.Min(x => x.Item2);
+            var lang = myLanguages.First(x => x.Item2 == max);
             var langCode = lang?.Item1.Iso639_3;
             IStemmer stemmer = langCode switch
             {
                 "eng" => new EnglishStemmer(),
-                "rus" => new RussianStemmer()
+                "rus" => new RussianStemmer(),
+                _ => throw new Exception()
             };
             var stemmed = stemmer.Stem(or);
             return stemmed;

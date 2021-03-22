@@ -66,11 +66,11 @@ namespace Task4
 
             foreach (var (document, value) in tfs)
             {
-                foreach (var (word, tf) in value)
+                foreach (var (word, tf) in value)   
                 {
-                    var idf = idfs[word];
-                    var tfIdf = Math.Round((decimal) ((double) tf * Math.Log2((double) idf)), 5, MidpointRounding.ToEven);
-                    streamWriter.WriteLine($@"{word};{document};{tf};{idf};{tfIdf}");
+                    var idf = Math.Round(Math.Log2((double) idfs[word]), 5, MidpointRounding.ToEven);
+                    var tfIdf = Math.Round((decimal) ((double) tf * idf), 5, MidpointRounding.ToEven);
+                    streamWriter.WriteLine($@"{word, 25};{document, 10};{tf, 10};{idf, 10};{tfIdf, 10}");
                 }
             }
         }
