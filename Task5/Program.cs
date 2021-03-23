@@ -56,7 +56,7 @@ namespace Task5
                 const int idf = 1;
                 var numberOfOccurrences = query.Count(x => x == queryWord);
                 var tf = Math.Round(numberOfOccurrences / (decimal) query.Length, 5, MidpointRounding.ToEven);
-                var tfIdf = Math.Round((decimal) ((double) tf * Math.Log2(idf)), 5, MidpointRounding.ToEven);
+                var tfIdf = Math.Round((decimal) ((double) tf * Math.Log10(idf)), 5, MidpointRounding.ToEven);
                 queryVector.Add(tfIdf);
 
                 foreach (var (key, _) in docVectors)
@@ -78,14 +78,15 @@ namespace Task5
 
             Dictionary<int, Dictionary<int, double>> cos = new();
 
+            var totalNumberOfDocuments = docVectors.Count;
+            
             for (var j = 0; j < query.Length; j++)
-            for (var i = 0; i < docResVectors.Count; i++)
+            for (var i = 0; i < totalNumberOfDocuments; i++)
             {
                 var preparedQueryWord = query[j];
                 var tf = tfs[i].ContainsKey(preparedQueryWord) ? tfs[i][preparedQueryWord] : 0;
                 var tfMax = tfs[i].Max(x => x.Value);
-                var n = docVectors.Count;
-                var idf = Math.Log2(n / (double) docResVectors.Select(x => x.Value[j] > 0 ? 1 : 0).Sum());
+                var idf = Math.Log10(totalNumberOfDocuments / (double) (1 + docResVectors.Select(x => x.Value[j] > 0 ? 1 : 0).Sum()));
                 var value = idf * (0.5 + 0.5 * ((double) tf / (double) tfMax));
 
                 if (!cos.ContainsKey(j)) cos.Add(j, new Dictionary<int, double>());
@@ -94,6 +95,8 @@ namespace Task5
 
             cos.SelectMany(x => x.Value.Select(y => y)).OrderByDescending(x => x.Value).Take(10)
                 .ForEach(x => Console.WriteLine(x.Key + ";" + x.Value));
+
+            Console.WriteLine(cos.SelectMany(x => x.Value.Select(y => y.Value)).Any(x => x < 0 || x > 1));
         }
 
         private static string PrepareWord(RankedLanguageIdentifier identifier, string or)

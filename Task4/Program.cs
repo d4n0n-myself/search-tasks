@@ -54,7 +54,7 @@ namespace Task4
             {
                 var (key, value) = pair;
                 var invertedDocumentFrequency =
-                    Math.Round(documentCount / (decimal) value.Count, 5, MidpointRounding.ToEven);
+                    Math.Round((decimal) Math.Log10(documentCount / (double) (1 + value.Select(x=>x > 0 ? 1 : 0).Sum())), 5, MidpointRounding.ToEven);
                 if (!idfs.ContainsKey(key)) idfs.TryAdd(key, 0);
                 idfs[key] = invertedDocumentFrequency;
             });
@@ -68,8 +68,8 @@ namespace Task4
             {
                 foreach (var (word, tf) in value)   
                 {
-                    var idf = Math.Round(Math.Log2((double) idfs[word]), 5, MidpointRounding.ToEven);
-                    var tfIdf = Math.Round((decimal) ((double) tf * idf), 5, MidpointRounding.ToEven);
+                    var idf = Math.Round(idfs[word], 5, MidpointRounding.ToEven);
+                    var tfIdf = Math.Round(tf * idf, 5, MidpointRounding.ToEven);
                     streamWriter.WriteLine($@"{word, 25};{document, 10};{tf, 10};{idf, 10};{tfIdf, 10}");
                 }
             }
